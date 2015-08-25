@@ -33,8 +33,8 @@ class Slack < Sensu::Handler
   end
 
   def handle
-    attachment = @event['notification'] || build_attachment
-    post_data(attachment)
+    #attachment = @event['notification'] || build_attachment
+    post_data(build_attachment)
   end
 
   def acquire_infra_details
@@ -80,7 +80,7 @@ class Slack < Sensu::Handler
     when 0
       return '#33CC33'
     when 1
-      return '#B2B200'
+      return 'warning'
     when 2
       return '#FF0000'
     when 3
@@ -89,24 +89,13 @@ class Slack < Sensu::Handler
       return '#FF6600'
     end
   end
-  # def build_description
-  #   [
-  #     @event['client']['name'],
-  #     @event['check']['name'],
-  #     @event['check']['output'],
-  #     @event['client']['address'],
-  #     @event['client']['subscriptions'].join(',')
-  #   ].join(' : ')
-  # end
 
   def define_check_state_duration
     ''
   end
 
   def build_attachment
-    {
-      'attachments' => [
-        {
+[
           'fallback' => 'Sensu Alert',
           'text' => "#{define_sensu_env} #{@event['client']['name']} - #{@event['check']['name']}",
           'color' => set_color,
@@ -147,9 +136,7 @@ class Slack < Sensu::Handler
               'short' => true
             }
           ]
-        }
       ]
-    }
   end
 
   def post_data(notice)
@@ -176,7 +163,8 @@ class Slack < Sensu::Handler
   def payload(notice)
     {
       link_names: 1,
-      text: [slack_message_prefix, notice].compact.join(' '),
+      text: slack_message_prefix,
+      attachments: notice,
       icon_emoji: icon_emoji
     }.tap do |payload|
       payload[:channel] = slack_channel if slack_channel
