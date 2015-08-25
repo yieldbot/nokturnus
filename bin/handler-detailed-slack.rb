@@ -4,41 +4,50 @@ require 'sensu-handler'
 require 'json'
 
 class Slack < Sensu::Handler
-  def slack_token
-    get_setting('token')
+  # Acquires the mail settings from a json file dropped via Chef
+  #
+  # These settings will set who the mail should be set to along with any
+  # necessary snmtp settings.  All can be overridden in the local Vagrantfile
+  #
+  # @example Get a setting
+  #   "acquire_setting('alert_prefix')" #=> "go away"
+  # @param name [string] the alert heading
+  # @return [string] the configuration string
+  def acquire_setting(name)
+    case acquire_product
+    when 'devops'
+      return settings['devops-mailer'][name]
+    when 'platform'
+      return settings['platform-mailer'][name]
+    else
+      return settings["product-#{acquire_product}-slack"][name]
+    end
   end
 
-  def slack_channel
-    get_setting('channel')
+  # Acquire any client or device specific information about the
+  # monitoring infrastructure
+  #
+  # @example Get the information
+  #   "acquire_infra_details" #=> Hash
+  # @return [hash] any provided infra details for the device
+  def acquire_infra_details
+    JSON.parse(File.read('/etc/sensu/conf.d/monitoring_infra.json'))
   end
 
-  def slack_message_prefix
-    get_setting('message_prefix')
-  end
-
-  def slack_team_name
-    get_setting('team_name')
-  end
-
-  def slack_bot_name
-    get_setting('bot_name')
-  end
-
-  def incident_key
-    @event['client']['name'] + '/' + @event['check']['name']
-  end
-
-  def get_setting(name)
-    settings['devops-slack'][name]
+  # Acquires product name
+  #
+  # The product name will be used for contact routing purposes. The product
+  # will define which configuration snippet to use
+  #
+  # @example Get a product
+  #   "acquire_product" #=> "luts"
+  # @return [string] the product
+  def acquire_product
+    @event['check']['product']
   end
 
   def handle
-    #attachment = @event['notification'] || build_attachment
-    post_data(build_attachment)
-  end
-
-  def acquire_infra_details
-    JSON.parse(File.read('/etc/sensu/conf.d/monitoring_infra.json'))
+    post_data(build_alert)
   end
 
   def define_sensu_env
@@ -94,58 +103,72 @@ class Slack < Sensu::Handler
     ''
   end
 
-  def build_attachment
-[
-          'fallback' => 'Sensu Alert',
-          'text' => "#{define_sensu_env} #{@event['client']['name']} - #{@event['check']['name']}",
-          'color' => set_color,
-          'fields' => [
-            {
-              'title' => 'Monitored Instance',
-              'value' => @event['client']['name'],
-              'short' => true
-            },
-            {
-              'title' => 'Sensu-Client',
-              'value' => @event['client']['name'],
-              'short' => true
-            },
-            {
-              'title' => 'Check Name',
-              'value' => @event['check']['name'],
-              'short' => true
-            },
-            {
-              'title' => 'Check State',
-              'value' => define_status,
-              'short' => true
-            },
-            {
-              'title' => 'Event Time',
-              'value' => Time.at(@event['check']['issued']),
-              'short' => true
-            },
-            {
-              'title' => 'Check State Duration',
-              'value' => define_check_state_duration,
-              'short' => true
-            },
-            {
-              'title' => 'Check Output',
-              'value' => @event['check']['output'],
-              'short' => true
-            }
-          ]
-      ]
+  def clean_output
+    @event['check']['output'].partition(':')[0]
   end
 
-  def post_data(notice)
+  def build_alert
+    [
+      'fallback' => 'Sensu Alert',
+      'color' => set_color,
+      'fields' => [
+        {
+          'title' => 'Monitored Instance',
+          'value' => @event['client']['name'],
+          'short' => true
+        },
+        {
+          'title' => 'Sensu-Client',
+          'value' => @event['client']['name'],
+          'short' => true
+        },
+        {
+          'title' => 'Check Name',
+          'value' => @event['check']['name'],
+          'short' => true
+        },
+        {
+          'title' => 'Check State',
+          'value' => define_status,
+          'short' => true
+        },
+        {
+          'title' => 'Event Time',
+          'value' => Time.at(@event['check']['issued']),
+          'short' => true
+        },
+        {
+          'title' => 'Check State Duration',
+          'value' => define_check_state_duration,
+          'short' => true
+        },
+        {
+          'title' => 'Check Output',
+          'value' => clean_output,
+          'short' => true
+        }
+      ]
+    ] unless acquire_setttings(custom_alert)
+  end
+
+  def check_status
+    @event['check']['status']
+  end
+
+  def slack_uri
+    acquire_settings('token')
+    url = "https://hooks.slack.com/services/#{token}"
+    # url = 'https://hooks.slack.com/services/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'
+    URI(url)
+  end
+
+  def post_data(alert)
     uri = slack_uri
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
 
     req = Net::HTTP::Post.new("#{uri.path}?#{uri.query}")
-    req.body = "payload=#{payload(notice).to_json}"
+    req.body = "payload=#{payload(alert).to_json}"
 
     response = http.request(req)
     verify_response(response)
@@ -160,34 +183,14 @@ class Slack < Sensu::Handler
     end
   end
 
-  def payload(notice)
+  def payload(alert)
     {
       link_names: 1,
-      text: slack_message_prefix,
-      attachments: notice,
-      icon_emoji: icon_emoji
+      text: acquire_settting('alert_prefix'),
+      attachments: alert
     }.tap do |payload|
-      payload[:channel] = slack_channel if slack_channel
-      payload[:username] = slack_bot_name if slack_bot_name
+      payload[:channel] = acquire_settting('channel')
+      payload[:username] = acquire_settting('bot_name')
     end
-  end
-
-  def icon_emoji
-    default = ':feelsgood:'
-    emoji = {
-      0 => ':godmode:',
-      1 => ':hurtrealbad:',
-      2 => ':feelsgood:'
-    }
-    emoji.fetch(check_status.to_i, default)
-  end
-
-  def check_status
-    @event['check']['status']
-  end
-
-  def slack_uri
-    url = 'https://hooks.slack.com/services/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'
-    URI(url)
   end
 end
