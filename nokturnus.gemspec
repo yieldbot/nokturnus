@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.email                  = '<devops@yieldbot.com>'
   s.homepage               = 'https://github.com/yieldbot/nokturnus'
   s.license                = 'MIT'
-  s.name                   = 'noktumus'
+  s.name                   = 'nokturnus'
   s.platform               = Gem::Platform::RUBY
   s.required_ruby_version  = '>= 1.9.3'
   s.summary                = 'Scripts and templates for generating useful monitoring alerts in Slack'

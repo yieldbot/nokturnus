@@ -1,4 +1,4 @@
-require 'Nokturnus/version'
+require 'nokturnus/version'
 
 # Load the defaults
 #
