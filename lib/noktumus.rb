@@ -1,8 +1,8 @@
-require 'noktumus/version'
+require 'Nokturnus/version'
 
 # Load the defaults
 #
-module Noktumus
+module Nokturnus
   class << self
       attr_writer :ui
         end

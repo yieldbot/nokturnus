@@ -3,7 +3,7 @@ require 'json'
 # encoding: utf-8
 # main entry point method
 # @since 0.0.1
-module Noktumus
+module Nokturnus
   # define the version of the gem
   # @since 0.0.1
   module Version
@@ -13,7 +13,7 @@ module Noktumus
 
     STRING = [MAJOR, MINOR, PATCH].compact.join('.')
 
-    NAME   = 'Noktumus'
+    NAME   = 'Nokturnus'
     BANNER = "#{NAME} v%s"
 
     # pull the version into the gemspec for use with Jenkins

@@ -2,7 +2,7 @@ lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require 'date'
-require 'noktumus/version'
+require 'nokturnus/version'
 
 Gem::Specification.new do |s|
   s.authors                = ['Yieldbot, Inc.']
@@ -10,13 +10,13 @@ Gem::Specification.new do |s|
   s.date                   = Date.today.to_s
   s.description            = 'Scripts and templates for generating useful monitoring alerts in Slack'
   s.email                  = '<devops@yieldbot.com>'
-  s.homepage               = 'https://github.com/yieldbot/noktumus'
+  s.homepage               = 'https://github.com/yieldbot/nokturnus'
   s.license                = 'MIT'
   s.name                   = 'noktumus'
   s.platform               = Gem::Platform::RUBY
   s.required_ruby_version  = '>= 1.9.3'
   s.summary                = 'Scripts and templates for generating useful monitoring alerts in Slack'
-  s.version                = Noktumus::Version::STRING
+  s.version                = Nokturnus::Version::STRING
   s.files                  = Dir['{bin}/**/*', '{lib,spec}/**/*.rb', 'LICENSE', '*.md']
   s.executables            = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.test_files             = s.files.grep(%r{^(test|spec|features)/})

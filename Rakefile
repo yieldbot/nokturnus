@@ -3,7 +3,7 @@ require 'github/markup'
 require 'redcarpet'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
-require_relative 'lib/noktumus'
+require_relative 'lib/nokturnus'
 require 'yard'
 require 'yard/rake/yardoc_task'
 
@@ -24,14 +24,14 @@ task :make_bin_executable do
   `chmod -R +x bin/*`
 end
 
-desc 'Retrieve the current version of Noktumus'
+desc 'Retrieve the current version of Nokturnus'
 task :version do
-  puts Noktumus::Version.json_version
+  puts Nokturnus::Version.json_version
 end
 
-desc 'Bump the PATCH version of Noktumus'
+desc 'Bump the PATCH version of Nokturnus'
 task :bump do
-  version_file = 'lib/noktumus/version.rb'
+  version_file = 'lib/nokturnus/version.rb'
 
   # Read the file, bump the PATCH version
   contents = File.read(version_file).gsub(/(PATCH = )(\d+)/) { |_| Regexp.last_match[1] + (Regexp.last_match[2].to_i + 1).to_s }
