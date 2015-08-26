@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nokturnus (0.0.8)
+    nokturnus (0.0.9)
       sensu-plugin (= 1.2.0)
 
 GEM
