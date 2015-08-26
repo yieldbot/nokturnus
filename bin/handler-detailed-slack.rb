@@ -14,13 +14,13 @@ class Slack < Sensu::Handler
   # @param name [string] the alert heading
   # @return [string] the configuration string
   def acquire_setting(name)
-    case acquire_product
-    when 'devops'
-      return settings['devops-slack'][name]
+    case @current_product
+    # when 'devops'
+    #   return settings['devops-slack'][name]
     when 'platform'
       return settings['platform-slack'][name]
     else
-      return settings["product-#{acquire_product}-slack"][name]
+      return settings["product-#{@current_product}-slack"][name]
     end
   end
 
@@ -34,20 +34,23 @@ class Slack < Sensu::Handler
     JSON.parse(File.read('/etc/sensu/conf.d/monitoring_infra.json'))
   end
 
-  # Acquires product name
+  # Acquires product names
   #
-  # The product name will be used for contact routing purposes. The product
+  # The product name will be used for contact routing purposes, etc. The product
   # will define which configuration snippet to use
   #
-  # @example Get a product
-  #   "acquire_product" #=> "luts"
-  # @return [string] the product
-  def acquire_product
+  # @example Get a array of products
+  #   "acquire_product" #=> "luts, datapipeline"
+  # @return [array] the products
+  def acquire_products
     @event['check']['product']
   end
 
   def handle
-    post_data(build_alert)
+    acquire_products.each do |p|
+      @current_product = p
+      post_data(build_alert)
+    end
   end
 
   def define_sensu_env
