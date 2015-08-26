@@ -15,8 +15,7 @@ class Slack < Sensu::Handler
   # @return [string] the configuration string
   def acquire_setting(name)
     product = ARGV[1]
-      return settings[product][name]
-    end
+    settings[product][name]
   end
 
   # Acquire any client or device specific information about the
@@ -30,10 +29,8 @@ class Slack < Sensu::Handler
   end
 
   def handle
-    # acquire_products.each do |p|
-    #   @current_product = p
-      post_data(build_alert)
-    end
+    post_data(build_alert)
+  end
 
   def define_sensu_env
     case acquire_infra_details['sensu']['environment']
