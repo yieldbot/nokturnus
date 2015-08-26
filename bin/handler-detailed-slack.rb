@@ -14,7 +14,7 @@ class Slack < Sensu::Handler
   # @param name [string] the alert heading
   # @return [string] the configuration string
   def acquire_setting(name)
-    product = ARGV[1]
+    product = ARGV[0]
     settings[product][name]
   end
 
