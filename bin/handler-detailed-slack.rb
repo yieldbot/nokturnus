@@ -14,13 +14,8 @@ class Slack < Sensu::Handler
   # @param name [string] the alert heading
   # @return [string] the configuration string
   def acquire_setting(name)
-    case @current_product
-    # when 'devops'
-    #   return settings['devops-slack'][name]
-    when 'platform'
-      return settings['platform-slack'][name]
-    else
-      return settings["product-#{@current_product}-slack"][name]
+    product = ARGV[1]
+      return settings[product][name]
     end
   end
 
@@ -34,21 +29,9 @@ class Slack < Sensu::Handler
     JSON.parse(File.read('/etc/sensu/conf.d/monitoring_infra.json'))
   end
 
-  # Acquires product names
-  #
-  # The product name will be used for contact routing purposes, etc. The product
-  # will define which configuration snippet to use
-  #
-  # @example Get a array of products
-  #   "acquire_product" #=> "luts, datapipeline"
-  # @return [array] the products
-  def acquire_products
-    @event['check']['product']
-  end
-
   def handle
-    acquire_products.each do |p|
-      @current_product = p
+    # acquire_products.each do |p|
+    #   @current_product = p
       post_data(build_alert)
     end
   end
