@@ -16,9 +16,9 @@ class Slack < Sensu::Handler
   def acquire_setting(name)
     case acquire_product
     when 'devops'
-      return settings['devops-mailer'][name]
+      return settings['devops-slack'][name]
     when 'platform'
-      return settings['platform-mailer'][name]
+      return settings['platform-slack'][name]
     else
       return settings["product-#{acquire_product}-slack"][name]
     end
@@ -148,7 +148,7 @@ class Slack < Sensu::Handler
           'short' => true
         }
       ]
-    ] unless acquire_setttings(custom_alert)
+    ]
   end
 
   def check_status
@@ -156,10 +156,7 @@ class Slack < Sensu::Handler
   end
 
   def slack_uri
-    acquire_settings('token')
-    url = "https://hooks.slack.com/services/#{token}"
-    # url = 'https://hooks.slack.com/services/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'
-    URI(url)
+    URI("https://hooks.slack.com/services/#{acquire_setting('token')}")
   end
 
   def post_data(alert)
@@ -186,11 +183,11 @@ class Slack < Sensu::Handler
   def payload(alert)
     {
       link_names: 1,
-      text: acquire_settting('alert_prefix'),
+      text: acquire_setting('alert_prefix'),
       attachments: alert
     }.tap do |payload|
-      payload[:channel] = acquire_settting('channel')
-      payload[:username] = acquire_settting('bot_name')
+      payload[:channel] = acquire_setting('channel')
+      payload[:username] = acquire_setting('bot_name')
     end
   end
 end
