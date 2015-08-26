@@ -28,8 +28,13 @@ class Slack < Sensu::Handler
     JSON.parse(File.read('/etc/sensu/conf.d/monitoring_infra.json'))
   end
 
+  # Create the slack attachment and ship it
+  # @example Send a slack attachment to the correct channel
+  #   "handle" #=> "A well-formed slack notification to a recipent"
+  # @return [integer] exit code
   def handle
     post_data(build_alert)
+    puts 'slack msg -- sent alert for ' + @event['client']['name'] + ' to ' + acquire_setting('channel')
   end
 
   def define_sensu_env
@@ -47,6 +52,13 @@ class Slack < Sensu::Handler
     end
   end
 
+  # Convert the integer value given by Sensu into a text string
+  #
+  # This will be used in both the email subject and in the `Check State:` field
+  #
+  # @example Set the status of the check to WARNING
+  #   "define_status" #=> "WARNING
+  # @return [string] The status of the check
   def define_status
     case @event['check']['status']
     when 0
