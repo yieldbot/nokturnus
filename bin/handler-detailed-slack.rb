@@ -34,7 +34,6 @@ class Slack < Sensu::Handler
     #   @current_product = p
       post_data(build_alert)
     end
-  end
 
   def define_sensu_env
     case acquire_infra_details['sensu']['environment']
