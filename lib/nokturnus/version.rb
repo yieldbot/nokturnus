@@ -9,7 +9,7 @@ module Nokturnus
   module Version
     MAJOR = 0
     MINOR = 0
-    PATCH = 15
+    PATCH = 16
 
     STRING = [MAJOR, MINOR, PATCH].compact.join('.')
 
