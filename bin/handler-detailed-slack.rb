@@ -5,9 +5,6 @@ require 'json'
 require 'zoma/config'
 
 class Slack < Sensu::Handler
-
-
-
   # Create the slack attachment and ship it
   # @example Send a slack attachment to the correct channel
   #   "handle" #=> "A well-formed slack notification to a recipent"
@@ -75,7 +72,6 @@ class Slack < Sensu::Handler
       ]
     ]
   end
-
 
   def slack_uri
     URI("https://hooks.slack.com/services/#{Zoma.acquire_setting('token')}")
