@@ -2,16 +2,80 @@
 
 require 'sensu-handler'
 require 'json'
-require 'zoma/config'
 
 class Slack < Sensu::Handler
+  # Acquires the mail settings from a json file dropped via Chef
+  #
+  # These settings will set who the mail should be set to along with any
+  # necessary snmtp settings.  All can be overridden in the local Vagrantfile
+  #
+  # @example Get a setting
+  #   "acquire_setting('alert_prefix')" #=> "go away"
+  # @param name [string] the alert heading
+  # @return [string] the configuration string
+  def acquire_setting(name)
+    product = ARGV[0]
+    settings[product][name]
+  end
+
+  # Acquire any client or device specific information about the
+  # monitoring infrastructure
+  #
+  # @example Get the information
+  #   "acquire_infra_details" #=> Hash
+  # @return [hash] any provided infra details for the device
+  def acquire_infra_details
+    JSON.parse(File.read('/etc/sensu/conf.d/monitoring_infra.json'))
+  end
+
   # Create the slack attachment and ship it
   # @example Send a slack attachment to the correct channel
   #   "handle" #=> "A well-formed slack notification to a recipent"
   # @return [integer] exit code
   def handle
     post_data(build_alert)
-    puts 'slack msg -- sent alert for ' + @event['client']['name'] + ' to ' + Zoma.acquire_setting('channel')
+    puts 'slack msg -- sent alert for ' + @event['client']['name'] + ' to ' + acquire_setting('channel')
+  end
+
+  def define_sensu_env
+    case acquire_infra_details['sensu']['environment']
+    when 'prd'
+      return 'Prod: '
+    when 'dev'
+      return 'Dev: '
+    when 'stg'
+      return 'Stg: '
+    when 'vagrant'
+      return 'Vagrant: '
+    else
+      return 'Test: '
+    end
+  end
+
+  # Convert the integer value given by Sensu into a text string
+  #
+  # This will be used in both the email subject and in the `Check State:` field
+  #
+  # @example Set the status of the check to WARNING
+  #   "define_status" #=> "WARNING
+  # @return [string] The status of the check
+  def define_status
+    case @event['check']['status']
+    when 0
+      return 'OK'
+    when 1
+      return 'WARNING'
+    when 2
+      return 'CRITICAL'
+    when 3
+      return 'UNKNOWN'
+    when 127
+      return 'CONFIG ERROR'
+    when 126
+      return 'PERMISSION DENIED'
+    else
+      return 'ERROR'
+    end
   end
 
   def set_color
@@ -27,6 +91,14 @@ class Slack < Sensu::Handler
     else
       return '#FF6600'
     end
+  end
+
+  def define_check_state_duration
+    ''
+  end
+
+  def clean_output
+    @event['check']['output'].partition(':')[0]
   end
 
   def build_alert
@@ -51,7 +123,7 @@ class Slack < Sensu::Handler
         },
         {
           'title' => 'Check State',
-          'value' => Zoma.define_status,
+          'value' => define_status,
           'short' => true
         },
         {
@@ -61,20 +133,24 @@ class Slack < Sensu::Handler
         },
         {
           'title' => 'Check State Duration',
-          'value' => Zoma.define_check_state_duration,
+          'value' => define_check_state_duration,
           'short' => true
         },
         {
           'title' => 'Check Output',
-          'value' => Zoma.clean_output,
+          'value' => clean_output,
           'short' => true
         }
       ]
     ]
   end
 
+  def check_status
+    @event['check']['status']
+  end
+
   def slack_uri
-    URI("https://hooks.slack.com/services/#{Zoma.acquire_setting('token')}")
+    URI("https://hooks.slack.com/services/#{acquire_setting('token')}")
   end
 
   def post_data(alert)
@@ -101,11 +177,11 @@ class Slack < Sensu::Handler
   def payload(alert)
     {
       link_names: 1,
-      text: Zoma.acquire_setting('alert_prefix'),
+      text: acquire_setting('alert_prefix'),
       attachments: alert
     }.tap do |payload|
-      payload[:channel] = Zoma.acquire_setting('channel')
-      payload[:username] = Zoma.acquire_setting('bot_name')
+      payload[:channel] = acquire_setting('channel')
+      payload[:username] = acquire_setting('bot_name')
     end
   end
 end
