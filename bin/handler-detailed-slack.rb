@@ -149,6 +149,8 @@ class Slack < Sensu::Handler
     @event['check']['status']
   end
 
+  #
+  #
   def slack_uri
     URI("https://hooks.slack.com/services/#{acquire_setting('token')}")
   end
@@ -165,6 +167,8 @@ class Slack < Sensu::Handler
     verify_response(response)
   end
 
+  #
+  #
   def verify_response(response)
     case response
     when Net::HTTPSuccess
